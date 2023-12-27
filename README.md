@@ -20,11 +20,6 @@ This guide provides step-by-step instructions on executing FedOps Silo, a Federa
 
 1. ***Start by fork the FedOps-Silo.***
 
-- Pytorch (MNIST example)
-   ```shell
-   git clone https://github.com/gachon-CCLab/FedOps.git && mv FedOps/silo/examples/torch/MNIST . && rm -rf FedOps
-   ```
-
 2. ***Customize the FedOps example code.***
    - In accordance with the baseline form, write the code with reference to the example and store it in the your own git remote storage.
 
