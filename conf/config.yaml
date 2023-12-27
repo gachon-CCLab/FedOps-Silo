@@ -5,18 +5,18 @@ learning_rate: 0.001 # Input model's learning rate
 
 model_type: 'Pytorch' # This value should be maintained
 model:
-  _target_: models.CIFAR100Classifier # Input your custom model
+  _target_: models.MNISTClassifier # Input your custom model
   output_size: 10 # Input your model's output size (only classification)
 
 dataset:
-    name: 'Cifar100' # Input your data name
+    name: 'MNIST' # Input your data name
     validation_split: 0.2 # Ratio of dividing train data by validation
 
 # client
-task_id: 'task_id' # Input your Task Name that you register in FedOps Website
+task_id: 'podname' # Input your Task Name that you register in FedOps Website
 
 wandb: 
-  use: true # Whether to use wandb
+  use: false # Whether to use wandb
   key: 'your wandb api key' # Input your wandb api key
   account: 'your wandb account' # Input your wandb account
   project: '${dataset.name}_${task_id}'

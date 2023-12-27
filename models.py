@@ -5,27 +5,31 @@ from torch import optim
 import torch.nn.functional as F
 from tqdm import tqdm 
 
-# Define Cifar100 Model    
-class CIFAR100Classifier(nn.Module):
-    # To properly utilize the config file, the output_size variable must be used in __init__()
+# Define MNIST Model    
+class MNISTClassifier(nn.Module):
+    # To properly utilize the config file, the output_size variable must be used in __init__().
     def __init__(self, output_size):
-        super(CIFAR100Classifier, self).__init__()
+        super(MNISTClassifier, self).__init__()
         # Convolutional layers
-        self.conv1 = nn.Conv2d(3, 64, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(64, 128, 5)
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+
         # Fully connected layers
-        self.fc1 = nn.Linear(128 * 5 * 5, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, output_size)  # 100 output classes for CIFAR-100
+        self.fc1 = nn.Linear(64 * 7 * 7, 1000)  # Image size is 28x28, reduced to 14x14 and then to 7x7
+        self.fc2 = nn.Linear(1000, output_size)  # 10 output classes (digits 0-9)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 128 * 5 * 5)
+        x = F.relu(self.conv1(x))
+        x = self.pool(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+
+        # Flatten the output for the fully connected layers
+        x = x.view(-1, 64 * 7 * 7)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc2(x)
+
         return x
 
 # Set the loss function and optimizer
@@ -55,6 +59,8 @@ def train_torch():
                     loss = criterion(outputs, labels)
                     loss.backward()
                     optimizer.step()
+                    
+                    pbar.update()  # Update the progress bar for each batch
 
         model.to("cpu")
             
@@ -64,35 +70,40 @@ def train_torch():
 
 # torch test
 def test_torch():
+    
     def custom_test_torch(model, test_loader, criterion, device: str = "cpu"):
         """Validate the network on the entire test set."""
         print("Starting evalutation...")
         
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        correct, loss = 0, 0.0
-        total_loss=0.0
-        # Initialize lists to store all labels and predictions
+        correct = 0
+        total_loss = 0.0
         all_labels = []
         all_predictions = []    
         
-        model.to(device)  # move model to GPU if available
+        model.to(device)
         model.eval()
         with torch.no_grad():
-            for inputs, labels in test_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                
-                # Calculate loss
-                loss = criterion(outputs, labels)
-                total_loss += loss.item()
-                
-                _, predicted = torch.max(outputs.data, 1)
-                correct += (predicted == labels).sum().item()
+            with torch.no_grad(), tqdm(total=len(test_loader), desc='Testing', unit='batch') as pbar:
+                for inputs, labels in test_loader:
+                    inputs, labels = inputs.to(device), labels.to(device)
+                    outputs = model(inputs)
+                    
+                    # Calculate loss
+                    loss = criterion(outputs, labels)
+                    total_loss += loss.item()
+
+                    _, predicted = torch.max(outputs, 1)
+                    correct += (predicted == labels).sum().item()
+
+                    all_labels.extend(labels.cpu().numpy())
+                    all_predictions.extend(predicted.cpu().numpy())
+                    
+                    pbar.update()  # Update the progress bar for each batch
             
         accuracy = correct / len(test_loader.dataset)
         average_loss = total_loss / len(test_loader)  # Calculate average loss
-        model.to("cpu")  # move model back to CPU
         
         # if you use metrics, you set metrics
         # type is dict
@@ -102,6 +113,7 @@ def test_torch():
         metrics = {"f1_score": f1}
         # metrics=None    
         
+        model.to("cpu")  # move model back to CPU
         return average_loss, accuracy, metrics
     
     return custom_test_torch

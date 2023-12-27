@@ -39,7 +39,7 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx], self.targets[idx]
 
-# Cifar 100
+# MNIST
 def load_partition(dataset, validation_split, label_count, batch_size):
     now = datetime.now()
     now_str = now.strftime('%Y-%m-%d %H:%M:%S')
@@ -47,17 +47,17 @@ def load_partition(dataset, validation_split, label_count, batch_size):
     fl_task_json = json.dumps(fl_task)
     logging.info(f'FL_Task - {fl_task_json}')
 
-    # CIFAR-100 Data Preprocessing
+    # MNIST Data Preprocessing
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.5,), (0.5,))  # Adjusted for grayscale
     ])
 
-    # Download CIFAR-100 Dataset
-    full_dataset = datasets.CIFAR100(root='./dataset/cifar100', train=True, download=True, transform=transform)
+    # Download MNIST Dataset
+    full_dataset = datasets.MNIST(root='./dataset/mnist', train=True, download=True, transform=transform)
 
     # Splitting the full dataset into train, validation, and test sets
-    test_split=0.2
+    test_split = 0.2
     train_size = int((1 - validation_split - test_split) * len(full_dataset))
     validation_size = int(validation_split * len(full_dataset))
     test_size = len(full_dataset) - train_size - validation_size
@@ -73,23 +73,21 @@ def load_partition(dataset, validation_split, label_count, batch_size):
     y_label_counter = Counter(y_labels)
 
     # Log data distribution information
-    for i in range(label_count):  # CIFAR-100 has 100 classes
+    for i in range(label_count):  # MNIST has 10 classes
         data_check_dict = {"label_num": i, "data_size": int(y_label_counter[i])}
         data_check_json = json.dumps(data_check_dict)
         logging.info(f'data_check - {data_check_json}')
 
     return train_loader, val_loader, test_loader, y_label_counter
 
-
 def gl_model_torch_validation(batch_size):
-    # CIFAR-100 Data Preprocessing
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.5,), (0.5,))  # Adjusted for grayscale
     ])
 
-    # Load the validation set of CIFAR-10 Dataset
-    val_dataset = datasets.CIFAR100(root='./dataset/cifar100', train=False, download=True, transform=transform)
+    # Load the test set of MNIST Dataset
+    val_dataset = datasets.MNIST(root='./dataset/mnist', train=False, download=True, transform=transform)
 
     # DataLoader for validation
     gl_val_loader = DataLoader(val_dataset, batch_size=batch_size)
