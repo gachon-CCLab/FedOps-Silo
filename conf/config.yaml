@@ -5,11 +5,11 @@ learning_rate: 0.001 # Input model's learning rate
 
 model_type: 'Pytorch' # This value should be maintained
 model:
-  _target_: models.MNISTClassifier # Input your custom model
+  _target_: model name # Input your custom model
   output_size: 10 # Input your model's output size (only classification)
 
 dataset:
-    name: 'MNIST' # Input your data name
+    name: 'dataset name' # Input your data name
     validation_split: 0.2 # Ratio of dividing train data by validation
 
 # client
