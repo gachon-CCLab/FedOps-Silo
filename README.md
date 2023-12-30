@@ -1,4 +1,4 @@
-# FedOps Silo
+# FedOps Custom Silo Setting
 
 This guide provides step-by-step instructions on executing FedOps Silo, a Federated Learning Lifecycle Management Operations framework.
 
