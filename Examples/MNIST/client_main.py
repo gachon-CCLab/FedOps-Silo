@@ -1,6 +1,5 @@
 import random
 import hydra
-from hydra.core.hydra_config import HydraConfig
 from hydra.utils import instantiate
 import numpy as np
 import torch
@@ -23,36 +22,31 @@ def main(cfg: DictConfig) -> None:
 
     logger = logging.getLogger(__name__)
     
-    # 랜덤 시드 설정
-    random.seed(cfg.random_seed)  
-    np.random.seed(cfg.random_seed) 
+    # Set random_seed
+    random.seed(cfg.random_seed)
+    np.random.seed(cfg.random_seed)
     torch.manual_seed(cfg.random_seed)
     
     print(OmegaConf.to_yaml(cfg))
     
     """
-   Client data load function
-   Split partition => apply each client dataset(Options)
-   After setting data method in client_data.py, call the data method.
-   Keep these variables.
-   """
-    train_loader, val_loader, test_loader, y_label_counter = data_preparation.load_partition(dataset=cfg.dataset.name, 
+    Client data load function
+    After setting model method in data_preparation.py, call the model method.
+    """
+    train_loader, val_loader, test_loader= data_preparation.load_partition(dataset=cfg.dataset.name, 
                                                                         validation_split=cfg.dataset.validation_split, 
-                                                                        label_count=cfg.model.output_size,
-                                                                        batch_size=cfg.batch_size) # Pytorch version
-    # (x_train, y_train), (x_test, y_test), y_label_counter = client_data.load_partition(dataset, FL_client_num, label_count) # Tensorflow version
-
+                                                                        batch_size=cfg.batch_size) 
+    
     logger.info('data loaded')
 
     """
-    #     Client local model build function
-    #     Set init local model
-    #     After setting model method in client_model.py, call the model method.
-    #     """
+    Client local model build function
+    Set init local model
+    After setting model method in models.py, call the model method.
+    """
     # torch model
     model = instantiate(cfg.model)
     model_type = cfg.model_type     # Check tensorflow or torch model
-    criterion, optimizer = models.set_model_hyperparameter(model,cfg.learning_rate)
     model_name = type(model).__name__
     train_torch = models.train_torch() # set torch train
     test_torch = models.test_torch() # set torch test
@@ -66,19 +60,17 @@ def main(cfg: DictConfig) -> None:
         logger.info('Latest Local Model download')
         # If you use torch model, you should input model variable in model parameter
         model = client_utils.download_local_model(model_type=model_type, task_id=task_id, listdir=local_list, model=model)  
-        
+    
+    # Don't change "registration"
     registration = {
         "train_loader" : train_loader,
         "val_loader" : val_loader,
         "test_loader" : test_loader,
-        "y_label_counter" : y_label_counter,
-        "criterion" : criterion,
-        "optimizer" : optimizer,
         "model" : model,
         "model_name" : model_name,
         "train_torch" : train_torch,
         "test_torch" : test_torch
-    } # torch version
+    }
     
     
     fl_client = FLClientTask(cfg, registration)

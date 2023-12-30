@@ -18,29 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 """
-Create your data loader for training/testing.
+Create your data loader for training/testing local & global model.
 Keep the value of the return variable for normal operation.
-----------------------------------------------------------
-dataset example
 """
 
-
-# Pytorch version
-
-# Define a custom Dataset class
-class CustomDataset(Dataset):
-    def __init__(self, data, targets, indices=None):
-        self.data = data[indices]
-        self.targets = targets[indices]
-    
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-        return self.data[idx], self.targets[idx]
-
 # Cifar 100
-def load_partition(dataset, validation_split, label_count, batch_size):
+def load_partition(dataset, validation_split, batch_size):
+    """
+    The variables train_loader, val_loader, and test_loader must be returned fixedly.
+    """
     now = datetime.now()
     now_str = now.strftime('%Y-%m-%d %H:%M:%S')
     fl_task = {"dataset": dataset, "start_execution_time": now_str}
@@ -68,20 +54,13 @@ def load_partition(dataset, validation_split, label_count, batch_size):
     val_loader = DataLoader(val_dataset, batch_size=batch_size)
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
-    # Count the number of instances per class in the train dataset
-    y_labels = [y for _, y in train_dataset]
-    y_label_counter = Counter(y_labels)
-
-    # Log data distribution information
-    for i in range(label_count):  # CIFAR-100 has 100 classes
-        data_check_dict = {"label_num": i, "data_size": int(y_label_counter[i])}
-        data_check_json = json.dumps(data_check_dict)
-        logging.info(f'data_check - {data_check_json}')
-
-    return train_loader, val_loader, test_loader, y_label_counter
+    return train_loader, val_loader, test_loader
 
 
 def gl_model_torch_validation(batch_size):
+    """
+    Setting up a dataset to evaluate a global model on the server
+    """
     # CIFAR-100 Data Preprocessing
     transform = transforms.Compose([
         transforms.ToTensor(),
