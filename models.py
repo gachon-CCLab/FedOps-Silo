@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from tqdm import tqdm 
 
 # Define your custom Model    
-class MNISTClassifier(nn.Module):
+class yourModelName(nn.Module):
     
 
 # Set the torch train & test
